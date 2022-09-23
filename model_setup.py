@@ -23,19 +23,71 @@ class ExperimentModel(nn.Module):
         #     for param in self.bert_layer.parameters():
         #         torch.no_grad(param)
 
-        self.classification1 = nn.Linear(bert_dim, 2)
-        self.classification2 = nn.Linear(bert_dim, 2)
-        self.classification3 = nn.Linear(bert_dim, 2)
-        self.classification4 = nn.Linear(bert_dim, 2)
-        self.classification5 = nn.Linear(bert_dim, 2)
-        self.classification6 = nn.Linear(bert_dim, 2)
-        self.classification7 = nn.Linear(bert_dim, 2)
-        self.classification8 = nn.Linear(bert_dim, 2)
-        self.classification9 = nn.Linear(bert_dim, 2)
-        self.classification10 = nn.Linear(bert_dim, 2)
-        self.classification11 = nn.Linear(bert_dim, 2)
-        self.classification12 = nn.Linear(bert_dim, 2)
-        self.classification13 = nn.Linear(bert_dim, 2)
+        self.classification1 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification2 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification3 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification4 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification5 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification6 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification7 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification8 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification9 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification10 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification11 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification12 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
+        self.classification13 = nn.Sequential(
+            nn.Linear(bert_dim, INTERMEDIATE_1),
+            nn.ReLU(),
+            nn.Linear(INTERMEDIATE_1, 2)
+        )
 
 
 

@@ -55,6 +55,9 @@ class ExperimentModel(nn.Module):
             # self.classification13
         ]
 
+        for classification_layer in self.classification_layers:
+            nn.init.kaiming_uniform_(classification_layer.weight)
+
     def forward(self, batch):
 
         # assuming batch_size * sentence_length

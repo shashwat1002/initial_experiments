@@ -10,10 +10,11 @@ ic.disable()
 INTERMEDIATE_1 = 300
 INTERMEDIATE_2 = 2
 LAYER_NUM = 12
+SMALL_CONST = 0.001
 
 class ExperimentModel(nn.Module):
 
-    def __init__(self, bert_config, bert_dim):
+    def __init__(self, bert_config, bert_dim, small_const=1.0):
         super().__init__()
 
         self.bert_layer = BertModel(CONFIGURATION).to(DEVICE)
@@ -55,8 +56,10 @@ class ExperimentModel(nn.Module):
             # self.classification13
         ]
 
-        for classification_layer in self.classification_layers:
-            nn.init.kaiming_uniform_(classification_layer.weight)
+        with torch.no_grad():
+            for classification_layer in self.classification_layers:
+                nn.init.kaiming_uniform_(classification_layer.weight)
+                classification_layer.weight.mul(small_const)
 
     def forward(self, batch):
 
@@ -135,7 +138,7 @@ def train(model, loss_fun, optimizers, dataset, losses_file_path):
 
 def train_model(dataset, losses_file_path):
 
-    bert_model = ExperimentModel(CONFIGURATION, HIDDEN_SIZE).to(DEVICE)
+    bert_model = ExperimentModel(CONFIGURATION, HIDDEN_SIZE, SMALL_CONST).to(DEVICE)
     loss_funs = []
     for i in range(LAYER_NUM):
         loss_fun = nn.CrossEntropyLoss()

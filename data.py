@@ -4,7 +4,6 @@ from transformers import BertTokenizer
 from settings import *
 import torch
 from icecream import ic
-from datasets import load_dataset
 
 
 def transform_lama_to_experiment_format(dictionary):

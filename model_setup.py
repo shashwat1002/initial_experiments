@@ -118,10 +118,10 @@ def train_epoch(model, loss_funs, optimizers, dataloader):
 
         # tot_loss.backward()
 
-def train(model, loss_fun, optimizers, dataset, losses_file_path):
+def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_path):
 
     for epoch in range(NUM_EPOCHS):
-        dataloader = DataLoader(dataset, batch_size=BATCH_SIZE)
+        dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE)
         epoch_losses = train_epoch(model, loss_fun, optimizers, dataloader)
         string_line = '\t'.join([str(i) for i in epoch_losses])
         print(string_line)
@@ -129,10 +129,10 @@ def train(model, loss_fun, optimizers, dataset, losses_file_path):
             losses_file.write(string_line)
             losses_file.write('\n')
         torch.save(model, "model.pth")
-        test_model(dataset)
+        test_model(test_dataset)
         print(f"Epoch number: {epoch+1}")
 
-def train_model(dataset, losses_file_path):
+def train_model(train_dataset, test_dataset, losses_file_path):
 
     bert_model = ExperimentModel(CONFIGURATION, HIDDEN_SIZE).to(DEVICE)
     loss_funs = []
@@ -145,7 +145,7 @@ def train_model(dataset, losses_file_path):
     for layer in bert_model.classification_layers:
         optimizers.append(torch.optim.Adam(layer.parameters(), lr=1e-3))
 
-    train(bert_model, loss_funs, optimizers, dataset, losses_file_path)
+    train(bert_model, loss_funs, optimizers, train_dataset, test_dataset, losses_file_path)
 
 def test_model(dataset):
 
@@ -189,11 +189,12 @@ def test_model(dataset):
         print(metrics.classification_report(targets_all, predictions_all[i]))
 
 
-test_dataset = NegLamaDataet("LAMA_primed_negated/data/ConceptNet/high_ranked/ConceptNet.jsonl", BERT_INPUT_SIZE)
-
+# test_dataset = NegLamaDataet("LAMA_primed_negated/data/ConceptNet/high_ranked/ConceptNet.jsonl", BERT_INPUT_SIZE)
+train_dataset = NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE)
+test_dataset = NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE)
 
 
 # ic(bert_model(next(iter(test_dataloader))[0]))
 
-train_model(test_dataset, "loss_out.txt")
+train_model(train_dataset, test_dataset, "loss_out.txt")
 # test_model(test_dataset)

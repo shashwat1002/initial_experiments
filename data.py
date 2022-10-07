@@ -41,7 +41,11 @@ class NegLamaDataet(Dataset):
 
         with open(file_path, "r") as input_file:
             for line in input_file:
-                self.parsed_dictionaries.append(json.loads(line))
+                try:
+                    self.parsed_dictionaries.append(json.loads(line))
+                except json.decoder.JSONDecodeError:
+                    # empty line
+                    pass
 
 
         self.transformed_inputs_text = [

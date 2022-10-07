@@ -68,8 +68,10 @@ class ExperimentModel(nn.Module):
 
         CLS_INDEX = 0
         ic(all_hidden_embeddings[0][:, CLS_INDEX, :].size())
-        scores_across_layers = [module(all_hidden_embeddings[i][:, CLS_INDEX, :]) for i, module in enumerate(self.classification_layers)]
-        ic(scores_across_layers)
+        sentence_rep_tensors = [torch.mean(all_hidden_embeddings[i], dim=1, keepdim=True).squeeze(dim=1) for i in range(len(self.classification_layers))]
+        ic(sentence_rep_tensors[0].size())
+        scores_across_layers = [module(sentence_rep_tensors[i]) for i, module in enumerate(self.classification_layers)]
+        # ic(scores_across_layers)
         # ic(scores_across_layers[0].size())
         return scores_across_layers
 

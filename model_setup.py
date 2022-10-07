@@ -189,7 +189,7 @@ def test_model(dataset):
         print(metrics.classification_report(targets_all, predictions_all[i]))
 
 
-test_dataset = NegLamaDataet("LAMA_primed_negated/data/ConceptNet/high_ranked/ConceptNet.jsonl", 128)
+test_dataset = NegLamaDataet("LAMA_primed_negated/data/ConceptNet/high_ranked/ConceptNet.jsonl", BERT_INPUT_SIZE)
 
 
 

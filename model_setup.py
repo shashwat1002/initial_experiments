@@ -129,6 +129,9 @@ def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_
             losses_file.write(string_line)
             losses_file.write('\n')
         torch.save(model, "model.pth")
+        print(f"Train classification report: {epoch+1}")
+        test_model(train_dataset)
+        print(f"Test classification report: {epoch+1}")
         test_model(test_dataset)
         print(f"Epoch number: {epoch+1}")
 

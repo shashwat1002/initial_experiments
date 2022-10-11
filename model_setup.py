@@ -128,7 +128,7 @@ def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_
         with open(losses_file_path, "a") as losses_file:
             losses_file.write(string_line)
             losses_file.write('\n')
-        torch.save(model, "model.pth")
+        torch.save(model, MODEL_PATH)
         print(f"Train classification report: {epoch+1}")
         test_model(train_dataset)
         print(f"Test classification report: {epoch+1}")
@@ -156,7 +156,7 @@ def test_model(dataset):
     dataloader = DataLoader(dataset, batch_size=1)
     predictions_all = []
     targets_all = []
-    model = torch.load("model.pth")
+    model = torch.load(MODEL_PATH)
     model.eval()
 
     for i in range(LAYER_NUM):

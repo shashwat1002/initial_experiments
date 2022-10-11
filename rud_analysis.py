@@ -1,5 +1,7 @@
 from matplotlib import pyplot
 import re
+from scipy.signal import savgol_filter
+import matplotlib as mpl
 
 def accuracy_analysis(file_path):
 
@@ -24,11 +26,24 @@ data = accuracy_analysis("test_result_one.txt")
 print(data)
 
 def plot_function(data):
-    
+    mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink', 'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise', 'darkgreen', 'tan', 'salmon', 'gold'])
+    fig, ax = pyplot.subplots(3)
+    for index, row in enumerate(data):
+        ax[int(index/4)].plot(range(len(row)), row, label=f"{index+1}")
+    for i in range(3):
+        ax[i].legend()
+    pyplot.show()
+
+
+def smooth_plot(data):
+    mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink', 'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise', 'darkgreen', 'tan', 'salmon', 'gold'])
     fig, ax = pyplot.subplots()
     for index, row in enumerate(data):
-        ax.plot(range(len(row)), row, label=f"{index+1}")
+        smooth = savgol_filter(row, 101, 9)
+        ax.plot(range(len(smooth)), smooth, label=f"{index+1}")
     ax.legend()
     pyplot.show()
 
 plot_function(data)
+smooth_plot(data)
+

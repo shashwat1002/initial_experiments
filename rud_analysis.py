@@ -32,7 +32,7 @@ def plot_function(data):
         ax[int(index/4)].plot(range(len(row)), row, label=f"{index+1}")
     for i in range(3):
         ax[i].legend()
-    pyplot.show()
+    pyplot.savefig('figures/3subplots.png')
 
 
 def smooth_plot(data):
@@ -42,7 +42,7 @@ def smooth_plot(data):
         smooth = savgol_filter(row, 101, 9)
         ax.plot(range(len(smooth)), smooth, label=f"{index+1}")
     ax.legend()
-    pyplot.show()
+    pyplot.savefig('figures/smooth.png')
 
 plot_function(data)
 smooth_plot(data)

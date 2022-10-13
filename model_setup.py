@@ -153,7 +153,7 @@ def train_model(train_dataset, test_dataset, losses_file_path):
 def test_model(dataset):
 
 
-    dataloader = DataLoader(dataset, batch_size=1)
+    dataloader = DataLoader(dataset, batch_size=int(BATCH_SIZE*0.5))
     predictions_all = []
     targets_all = []
     model = torch.load(MODEL_PATH)
@@ -164,22 +164,24 @@ def test_model(dataset):
 
     for batch in dataloader:
         batch[1].to(DEVICE)
-        ic(batch[1].size())
+        ic(batch[1].size()) # batch size, 1
         predictions = model(batch[0])
+        predictions = [prediction.detach() for prediction in predictions]
         # ic(predictions.size())
         predictions_tensor = torch.stack(predictions, dim=1).to(DEVICE)
         ic(predictions_tensor.size()) # 1, 13, 2
         predictions_argmax = torch.argmax(predictions_tensor, dim=2)
-        ic(predictions_argmax.size()) # 1, 13
+        ic(predictions_argmax.size()) # batch, 13
+        # predictions_argmax_flat = torch.flatten(predictions_argmax)
+        # targets_flattened = torch.flatten(batch[1])
 
 
         for i in range(LAYER_NUM):
-            predictions_all[i].append(predictions_argmax[:, i].item())
+            predictions_all[i] += predictions_argmax[:, i].tolist()
 
-        ic(batch[1].item())
         ic(batch[1])
         ic(batch[1].size())
-        targets_all.append(batch[1].item())
+        targets_all += batch[1].tolist()
 
 
 

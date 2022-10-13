@@ -122,18 +122,18 @@ def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_
 
     for epoch in range(NUM_EPOCHS):
         dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE)
+        print(f"Starting epoch number: {epoch+1}", flush=True)
         epoch_losses = train_epoch(model, loss_fun, optimizers, dataloader)
         string_line = '\t'.join([str(i) for i in epoch_losses])
-        print(string_line)
+        print(string_line, flush=True)
         with open(losses_file_path, "a") as losses_file:
             losses_file.write(string_line)
             losses_file.write('\n')
         torch.save(model, MODEL_PATH)
-        print(f"Train classification report: {epoch+1}")
+        print(f"Train classification report: {epoch+1}", flush=True)
         test_model(train_dataset)
-        print(f"Test classification report: {epoch+1}")
+        print(f"Test classification report: {epoch+1}", flush=True)
         test_model(test_dataset)
-        print(f"Epoch number: {epoch+1}")
 
 def train_model(train_dataset, test_dataset, losses_file_path):
 
@@ -188,11 +188,12 @@ def test_model(dataset):
     # ic(len(targets_all))
 
     for i in range(LAYER_NUM):
-        print(f"Layer no. {i}")
-        print(metrics.classification_report(targets_all, predictions_all[i]))
+        print(f"Layer no. {i}", flush=True)
+        print(metrics.classification_report(targets_all, predictions_all[i]), flush=True)
 
 
 # test_dataset = NegLamaDataet("LAMA_primed_negated/data/ConceptNet/high_ranked/ConceptNet.jsonl", BERT_INPUT_SIZE)
+print("START", flush=True)
 train_dataset = NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE)
 test_dataset = NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE)
 

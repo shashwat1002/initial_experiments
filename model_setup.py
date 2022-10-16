@@ -161,27 +161,29 @@ def test_model(dataset):
 
     for i in range(LAYER_NUM):
         predictions_all.append([])
+    with torch.no_grad():
+        for batch in dataloader:
+            batch[1] = batch[1].detach()
+            batch[0] = batch[0].detach()
+            batch[1].to(DEVICE)
+            ic(batch[1].size()) # batch size, 1
+            predictions = model(batch[0])
+            predictions = [prediction.detach() for prediction in predictions]
+            # ic(predictions.size())
+            predictions_tensor = torch.stack(predictions, dim=1).to(DEVICE)
+            ic(predictions_tensor.size()) # 1, 13, 2
+            predictions_argmax = torch.argmax(predictions_tensor, dim=2)
+            ic(predictions_argmax.size()) # batch, 13
+            # predictions_argmax_flat = torch.flatten(predictions_argmax)
+            # targets_flattened = torch.flatten(batch[1])
 
-    for batch in dataloader:
-        batch[1].to(DEVICE)
-        ic(batch[1].size()) # batch size, 1
-        predictions = model(batch[0])
-        predictions = [prediction.detach() for prediction in predictions]
-        # ic(predictions.size())
-        predictions_tensor = torch.stack(predictions, dim=1).to(DEVICE)
-        ic(predictions_tensor.size()) # 1, 13, 2
-        predictions_argmax = torch.argmax(predictions_tensor, dim=2)
-        ic(predictions_argmax.size()) # batch, 13
-        # predictions_argmax_flat = torch.flatten(predictions_argmax)
-        # targets_flattened = torch.flatten(batch[1])
 
+            for i in range(LAYER_NUM):
+                predictions_all[i] += predictions_argmax[:, i].tolist()
 
-        for i in range(LAYER_NUM):
-            predictions_all[i] += predictions_argmax[:, i].tolist()
-
-        ic(batch[1])
-        ic(batch[1].size())
-        targets_all += batch[1].tolist()
+            ic(batch[1])
+            ic(batch[1].size())
+            targets_all += batch[1].tolist()
 
 
 

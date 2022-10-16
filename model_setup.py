@@ -146,7 +146,7 @@ def train_model(train_dataset, test_dataset, losses_file_path):
 
     optimizers = []
     for layer in bert_model.classification_layers:
-        optimizers.append(torch.optim.Adam(layer.parameters(), lr=1e-3))
+        optimizers.append(torch.optim.Adam(layer.parameters(), lr=LEARNING_RATE))
 
     train(bert_model, loss_funs, optimizers, train_dataset, test_dataset, losses_file_path)
 

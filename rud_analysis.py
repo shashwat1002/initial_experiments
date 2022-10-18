@@ -22,7 +22,7 @@ def accuracy_analysis(file_path):
 
         return layer_accuracy_data
 
-data = accuracy_analysis("test_result_one.txt")
+data = accuracy_analysis("test_result_4_learn.txt")
 print(data)
 
 def plot_function(data):
@@ -32,7 +32,7 @@ def plot_function(data):
         ax[int(index/4)].plot(range(len(row)), row, label=f"{index+1}")
     for i in range(3):
         ax[i].legend()
-    pyplot.savefig('figures/3subplots.png')
+    pyplot.savefig('figures/3subplots_learn4.png')
 
 
 def smooth_plot(data):
@@ -42,7 +42,7 @@ def smooth_plot(data):
         smooth = savgol_filter(row, 101, 9)
         ax.plot(range(len(smooth)), smooth, label=f"{index+1}")
     ax.legend()
-    pyplot.savefig('figures/smooth.png')
+    pyplot.savefig('figures/smooth_4learn.png')
 
 plot_function(data)
 smooth_plot(data)

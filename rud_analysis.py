@@ -2,6 +2,7 @@ from matplotlib import pyplot
 import re
 from scipy.signal import savgol_filter
 import matplotlib as mpl
+from icecream import ic
 
 def accuracy_analysis(file_path):
 
@@ -11,29 +12,25 @@ def accuracy_analysis(file_path):
         layer_train_accuracy_data = [[] for i in range(12)]
         layer_test_accuracy_data = [[] for i in range(12)]
 
+        main_data = [layer_train_accuracy_data, layer_test_accuracy_data]
         # this is because train and test reports alternate
         # entire train report followed by the entire test report
         test_train_toggle = True
 
+        total_accuracy_count = 0
         for line in out_data:
             line_parsed = re.split("  *", line)
-            if accuracy_line_count % 12 == 0:
-                test_train_toggle = not test_train_toggle
-            print(line_parsed)
+
             try:
-                if not test_train_toggle:
-                    if line_parsed[1] == "accuracy":
-                        layer_train_accuracy_data[accuracy_line_count % 12].append(float(line_parsed[2]))
-                        accuracy_line_count += 1
-
-                else:
-                    if line_parsed[1] == "accuracy":
-                        layer_test_accuracy_data[accuracy_line_count % 12].append(float(line_parsed[2]))
-                        accuracy_line_count += 1
-
-            except:
+                if line_parsed[1] == "accuracy":
+                    main_data[int(accuracy_line_count / 12) % 2][accuracy_line_count % 12].append(float(line_parsed[2]))
+                    accuracy_line_count += 1
+            except IndexError:
                 pass
-        print(f"accuracy line count: {accuracy_line_count}")
+
+        # print(f"accuracy line count: {accuracy_line_count}")
+        ic(len(layer_test_accuracy_data[0]))
+        ic(len(layer_train_accuracy_data[0]))
         return layer_train_accuracy_data, layer_test_accuracy_data
 
 train_rep, test_rep = accuracy_analysis("test_result_two.txt")
@@ -59,9 +56,9 @@ def smooth_plot(data, name):
     ax.legend()
     pyplot.savefig(f'figures/{name}.png')
 
-plot_function(train_rep, "train_3subplots")
-plot_function(train_rep, "test_3subplots")
+plot_function(train_rep, "train_subplots")
+plot_function(test_rep, "test_subplots")
 
 smooth_plot(train_rep, "train_smooth")
-smooth_plot(train_rep, "test_smooth")
+smooth_plot(test_rep, "test_smooth")
 

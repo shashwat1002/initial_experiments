@@ -9,7 +9,7 @@ torch.autograd.set_detect_anomaly(True)
 ic.disable()
 INTERMEDIATE_1 = 300
 INTERMEDIATE_2 = 2
-LAYER_NUM = 12
+LAYER_NUM = 13
 
 class ExperimentModel(nn.Module):
 
@@ -52,7 +52,7 @@ class ExperimentModel(nn.Module):
             self.classification10,
             self.classification11,
             self.classification12,
-            # self.classification13
+            self.classification13
         ]
 
     def forward(self, batch):

@@ -16,7 +16,7 @@ class ExperimentModel(nn.Module):
     def __init__(self, bert_config, bert_dim):
         super().__init__()
 
-        self.bert_layer = BertModel(CONFIGURATION).to(DEVICE)
+        self.bert_layer = BertModel.from_pretrained('bert-base-uncased', config=CONFIGURATION).to(DEVICE)
 
         # freeze bert
         # if FREEZE_BERT:

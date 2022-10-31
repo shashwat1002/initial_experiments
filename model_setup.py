@@ -1,4 +1,4 @@
-from transformers import BertConfig, BertTokenizer, BertModel
+from transformers import RobertaModel
 from torch import nn
 from settings import *
 from data import *
@@ -6,7 +6,7 @@ from sklearn import metrics
 from icecream import ic
 
 torch.autograd.set_detect_anomaly(True)
-ic.disable()
+# ic.disable()
 INTERMEDIATE_1 = 300
 INTERMEDIATE_2 = 2
 LAYER_NUM = 13
@@ -16,7 +16,11 @@ class ExperimentModel(nn.Module):
     def __init__(self, bert_config, bert_dim):
         super().__init__()
 
-        self.bert_layer = BertModel.from_pretrained('bert-base-uncased', config=CONFIGURATION).to(DEVICE)
+        self.bert_layer = RobertaModel.from_pretrained('roberta-base', config=CONFIGURATION).to(DEVICE)
+
+        # freeze bert
+        for param in self.bert_layer.parameters():
+            param.requires_grad = False
 
         # freeze bert
         # if FREEZE_BERT:

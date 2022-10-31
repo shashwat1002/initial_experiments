@@ -20,7 +20,7 @@ def transform_lama_to_experiment_format(dictionary):
 
     for i in range(2):
         for j in range(2):
-            sentence = "[CLS] " + sentences[i] + " [SEP] " + sentences[j] + " [SEP]"
+            sentence = f"{cls_token} " + sentences[i] + f" {sep_token} " + sentences[j] + f" {sep_token}"
             outcome = -1
 
             if i == j:
@@ -60,7 +60,7 @@ class NegLamaDataet(Dataset):
             tokenized = TOKENIZER.convert_tokens_to_ids(TOKENIZER.tokenize(og_input))
             len_tokenized = len(tokenized)
 
-            pad = TOKENIZER.convert_tokens_to_ids(TOKENIZER.tokenize("[PAD]"))
+            pad = TOKENIZER.convert_tokens_to_ids(TOKENIZER.tokenize(f"{pad_token}"))
 
             tokenized_plus_pad = tokenized + pad * (inputsize - len_tokenized)
             tokenized_plus_pad = torch.tensor(tokenized_plus_pad).to(DEVICE)

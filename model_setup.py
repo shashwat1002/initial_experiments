@@ -6,7 +6,7 @@ from sklearn import metrics
 from icecream import ic
 
 torch.autograd.set_detect_anomaly(True)
-# ic.disable()
+ic.disable()
 INTERMEDIATE_1 = 300
 INTERMEDIATE_2 = 2
 LAYER_NUM = 13

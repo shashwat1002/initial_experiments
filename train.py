@@ -1,9 +1,13 @@
 from model_setup import ExperimentModel
 from settings import *
+import settings
 from data import *
 from sklearn import metrics
 from icecream import ic
 from torch import nn
+import getopt
+import sys
+import time
 
 LAYER_NUM = 13
 
@@ -54,8 +58,8 @@ def train_epoch(model, loss_funs, optimizers, dataloader):
 
 def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_path):
 
-    for epoch in range(NUM_EPOCHS):
-        dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE)
+    for epoch in range(settings.NUM_EPOCHS):
+        dataloader = DataLoader(train_dataset, batch_size=settings.BATCH_SIZE)
         print(f"Starting epoch number: {epoch+1}", flush=True)
         epoch_losses = train_epoch(model, loss_fun, optimizers, dataloader)
         string_line = '\t'.join([str(i) for i in epoch_losses])
@@ -63,7 +67,7 @@ def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_
         with open(losses_file_path, "a") as losses_file:
             losses_file.write(string_line)
             losses_file.write('\n')
-        torch.save(model, MODEL_PATH)
+        torch.save(model, settings.MODEL_PATH)
         print(f"Train classification report: {epoch+1}", flush=True)
         test_model(train_dataset)
         print(f"Test classification report: {epoch+1}", flush=True)
@@ -80,17 +84,17 @@ def train_model(train_dataset, test_dataset, losses_file_path):
 
     optimizers = []
     for layer in bert_model.classification_layers:
-        optimizers.append(torch.optim.Adam(layer.parameters(), lr=LEARNING_RATE))
+        optimizers.append(torch.optim.Adam(layer.parameters(), lr=settings.LEARNING_RATE))
 
     train(bert_model, loss_funs, optimizers, train_dataset, test_dataset, losses_file_path)
 
 def test_model(dataset):
 
 
-    dataloader = DataLoader(dataset, batch_size=int(BATCH_SIZE*0.5))
+    dataloader = DataLoader(dataset, batch_size=int(settings.BATCH_SIZE*0.5))
     predictions_all = []
     targets_all = []
-    model = torch.load(MODEL_PATH)
+    model = torch.load(settings.MODEL_PATH)
     model.eval()
 
     for i in range(LAYER_NUM):
@@ -131,11 +135,32 @@ def test_model(dataset):
 
 
 # test_dataset = NegLamaDataet("LAMA_primed_negated/data/ConceptNet/high_ranked/ConceptNet.jsonl", BERT_INPUT_SIZE)
+
+
+# # ic(bert_model(next(iter(test_dataloader))[0]))
+
+
+
+def get_options():
+
+    opt_vals, opt_left = getopt.getopt(sys.argv[1:], '', longopts=OPTIONS)
+    for option_name, option_val in opt_vals:
+        if option_name == '--model_name':
+            settings.MODEL_PATH = f"{option_val}_{time.strftime('%d_%m_%Y_%H_%M')}.pth"
+        elif option_name == '--batch_size':
+            settings.BATCH_SIZE = int(option_val)
+        elif option_name == '--learning_rate':
+            settings.LEARNING_RATE = float(option_val)
+        elif option_name == '--num_epochs':
+            settings.NUM_EPOCHS = int(option_val)
+
+
+
+get_options()
+print_global_vars()
+
 print("START", flush=True)
 train_dataset = NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE)
 test_dataset = NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE)
-
-
-# ic(bert_model(next(iter(test_dataloader))[0]))
-
 train_model(train_dataset, test_dataset, "loss_out.txt")
+

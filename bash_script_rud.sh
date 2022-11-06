@@ -14,5 +14,5 @@ eval "$(conda shell.bash hook)"
 conda activate nlp_coursework
 
 
-python model_setup.py
+python train.py
 

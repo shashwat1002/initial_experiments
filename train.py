@@ -8,6 +8,10 @@ from torch import nn
 import getopt
 import sys
 import time
+from torch.nn.parallel import DistributedDataParallel as DDP
+import tempfile
+import torch.distributed as dist
+import torch.multiprocessing as mp
 
 LAYER_NUM = 13
 
@@ -15,7 +19,15 @@ LAYER_NUM = 13
 torch.autograd.set_detect_anomaly(True)
 ic.disable()
 
-def train_epoch(model, loss_funs, optimizers, dataloader):
+
+def setup(rank, world_size):
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+
+def cleanup():
+    dist.destroy_process_group()
+
+
+def train_epoch(model, loss_funs, optimizers, dataloader, rank, world_size):
     model.train()
 
     epoch_loss = []
@@ -25,9 +37,9 @@ def train_epoch(model, loss_funs, optimizers, dataloader):
     count = 0
 
     for batch in dataloader:
-        batch[1].to(DEVICE)
+        batch[1].cuda(rank)
         predictions = model(batch[0])
-        predictions_tensor = torch.stack(predictions, dim=1).to(DEVICE)
+        predictions_tensor = torch.stack(predictions, dim=1).cuda(rank)
         ic(predictions_tensor.device)
         ic(predictions_tensor.size())
 
@@ -36,7 +48,7 @@ def train_epoch(model, loss_funs, optimizers, dataloader):
         ic(targets.size())
         # number of bert layers
 
-        loss_list = [loss_funs[i](predictions_tensor[:, i, :], targets[:, i].to(DEVICE)) for i in range(LAYER_NUM)]
+        loss_list = [loss_funs[i](predictions_tensor[:, i, :], targets[:, i].cuda(rank)) for i in range(LAYER_NUM)]
         ic(loss_list)
 
         # QUESTIONABLE STEP
@@ -56,10 +68,10 @@ def train_epoch(model, loss_funs, optimizers, dataloader):
 
         # tot_loss.backward()
 
-def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_path):
+def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_path, rank, world_size):
 
     for epoch in range(settings.NUM_EPOCHS):
-        dataloader = DataLoader(train_dataset, batch_size=settings.BATCH_SIZE)
+        dataloader = make_dataloader(train_dataset, rank, world_size, batch_size=settings.BATCH_SIZE)
         print(f"Starting epoch number: {epoch+1}", flush=True)
         epoch_losses = train_epoch(model, loss_fun, optimizers, dataloader)
         string_line = '\t'.join([str(i) for i in epoch_losses])
@@ -67,15 +79,23 @@ def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_
         with open(losses_file_path, "a") as losses_file:
             losses_file.write(string_line)
             losses_file.write('\n')
-        torch.save(model, settings.MODEL_PATH)
-        print(f"Train classification report: {epoch+1}", flush=True)
-        test_model(train_dataset)
-        print(f"Test classification report: {epoch+1}", flush=True)
-        test_model(test_dataset)
 
-def train_model(train_dataset, test_dataset, losses_file_path):
+        if rank == 0:
+            # save stuff and test model only in the master process
+            torch.save(model, settings.MODEL_PATH)
+            dist.barrier() # make all processes wait for end of write
+            print(f"Train classification report: {epoch+1}", flush=True)
+            test_model(train_dataset)
+            print(f"Test classification report: {epoch+1}", flush=True)
+            test_model(test_dataset)
 
-    bert_model = ExperimentModel(CONFIGURATION, HIDDEN_SIZE).to(DEVICE)
+def train_model(rank, train_dataset, test_dataset, losses_file_path, world_size):
+
+    setup(rank, world_size) # for initialization of distributed stuff
+    bert_model = ExperimentModel(CONFIGURATION, HIDDEN_SIZE).cuda(rank) # rank will have the specific GPU id
+
+    bert_model_ddp = DDP(bert_model, device_ids=[rank])
+
     loss_funs = []
     for i in range(LAYER_NUM):
         loss_fun = nn.CrossEntropyLoss()
@@ -83,7 +103,7 @@ def train_model(train_dataset, test_dataset, losses_file_path):
     # optimizer = torch.optim.Adam(bert_model.parameters(), lr=1e-2)
 
     optimizers = []
-    for layer in bert_model.classification_layers:
+    for layer in bert_model_ddp.classification_layers:
         optimizers.append(torch.optim.Adam(layer.parameters(), lr=settings.LEARNING_RATE))
 
     train(bert_model, loss_funs, optimizers, train_dataset, test_dataset, losses_file_path)
@@ -91,6 +111,7 @@ def train_model(train_dataset, test_dataset, losses_file_path):
 def test_model(dataset):
 
 
+    # This function uses single GPU
     dataloader = DataLoader(dataset, batch_size=int(settings.BATCH_SIZE*0.5))
     predictions_all = []
     targets_all = []
@@ -159,8 +180,22 @@ def get_options():
 get_options()
 print_global_vars()
 
-print("START", flush=True)
-train_dataset = NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE)
-test_dataset = NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE)
-train_model(train_dataset, test_dataset, "loss_out.txt")
+# for reproducibility reasons
+torch.manual_seed(42)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
+
+WORLD_SIZE = torch.cuda.device_count()
+print(f"number of devices: {WORLD_SIZE}")
+
+if __name__ == "__main__":
+
+    print("START", flush=True)
+    train_dataset = NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE)
+    test_dataset = NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE)
+
+    mp.spawn(
+        train_model, args=(train_dataset, test_dataset, "loss_out.txt", WORLD_SIZE)
+    )
 

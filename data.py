@@ -1,4 +1,4 @@
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, DistributedSampler
 import json
 from transformers import BertTokenizer
 from settings import *
@@ -63,7 +63,7 @@ class NegLamaDataet(Dataset):
             pad = TOKENIZER.convert_tokens_to_ids(TOKENIZER.tokenize(f"{pad_token}"))
 
             tokenized_plus_pad = tokenized + pad * (inputsize - len_tokenized)
-            tokenized_plus_pad = torch.tensor(tokenized_plus_pad).to(DEVICE)
+            tokenized_plus_pad = torch.tensor(tokenized_plus_pad) # this tensor will be in the CPU
 
             tokenized_and_padded_and_target.append((tokenized_plus_pad, target))
 
@@ -78,6 +78,15 @@ class NegLamaDataet(Dataset):
     def __getitem__(self, index):
         # ic(self.transformed_inputs_text[index])
         return self.tensor_and_target[index]
+
+
+def make_dataloader(dataset, rank, world_size, batch_size):
+    
+    # so that there are no redundant datapoints across processes
+    sampler = DistributedSampler(dataset, rank=rank, num_replicas=world_size, shuffle=True)
+    return DataLoader(dataset, batch_size=batch_size, sampler=sampler)
+
+
 
 # test_dataset = NegLamaDataet("LAMA_primed_negated/data/ConceptNet/high_ranked/ConceptNet.jsonl", 512)
 

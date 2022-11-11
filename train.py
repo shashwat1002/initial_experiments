@@ -68,7 +68,7 @@ def train_epoch(model, loss_funs, optimizers, dataloader, rank, world_size):
 
         # tot_loss.backward()
 
-def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_path, rank, world_size):
+def train(model, loss_fun, optimizers, train_dataset, test_dataset, rank, world_size):
 
     for epoch in range(settings.NUM_EPOCHS):
         dataloader = make_dataloader(train_dataset, rank, world_size, batch_size=settings.BATCH_SIZE)
@@ -76,9 +76,6 @@ def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_
         epoch_losses = train_epoch(model, loss_fun, optimizers, dataloader)
         string_line = '\t'.join([str(i) for i in epoch_losses])
         print(string_line, flush=True)
-        with open(losses_file_path, "a") as losses_file:
-            losses_file.write(string_line)
-            losses_file.write('\n')
 
         if rank == 0:
             # save stuff and test model only in the master process
@@ -89,7 +86,7 @@ def train(model, loss_fun, optimizers, train_dataset, test_dataset, losses_file_
             print(f"Test classification report: {epoch+1}", flush=True)
             test_model(test_dataset)
 
-def train_model(rank, train_dataset, test_dataset, losses_file_path, world_size):
+def train_model(rank, train_dataset, test_dataset, world_size):
 
     setup(rank, world_size) # for initialization of distributed stuff
     bert_model = ExperimentModel(CONFIGURATION, HIDDEN_SIZE).cuda(rank) # rank will have the specific GPU id
@@ -106,7 +103,7 @@ def train_model(rank, train_dataset, test_dataset, losses_file_path, world_size)
     for layer in bert_model_ddp.classification_layers:
         optimizers.append(torch.optim.Adam(layer.parameters(), lr=settings.LEARNING_RATE))
 
-    train(bert_model, loss_funs, optimizers, train_dataset, test_dataset, losses_file_path)
+    train(bert_model, loss_funs, optimizers, train_dataset, test_dataset)
 
 def test_model(dataset):
 
@@ -196,6 +193,6 @@ if __name__ == "__main__":
     test_dataset = NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE)
 
     mp.spawn(
-        train_model, args=(train_dataset, test_dataset, "loss_out.txt", WORLD_SIZE)
+        train_model, args=(train_dataset, test_dataset, WORLD_SIZE)
     )
 

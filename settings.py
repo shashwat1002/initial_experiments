@@ -20,3 +20,17 @@ LEARNING_RATE = 1e-5
 sep_token = "</s>"
 cls_token = "<s>"
 pad_token = "<pad>"
+
+
+OPTIONS = [
+    'model_name=',
+    'batch_size=',
+    'learning_rate=',
+    'num_epochs=',
+]
+
+def print_global_vars():
+    print(MODEL_PATH)
+    print(BATCH_SIZE)
+    print(LEARNING_RATE)
+    print(NUM_EPOCHS)

@@ -14,7 +14,7 @@ class ExperimentModel(nn.Module):
     def __init__(self, bert_config, bert_dim):
         super().__init__()
 
-        self.bert_layer = RobertaModel.from_pretrained('roberta-base', config=CONFIGURATION).to(DEVICE)
+        self.bert_layer = RobertaModel.from_pretrained('roberta-base', config=CONFIGURATION)
 
         # freeze bert
         for param in self.bert_layer.parameters():

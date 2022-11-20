@@ -80,10 +80,10 @@ class NegLamaDataet(Dataset):
         return self.tensor_and_target[index]
 
 
-def make_dataloader(dataset, rank, world_size, batch_size):
+def make_dataloader(dataset, batch_size):
     
     # so that there are no redundant datapoints across processes
-    sampler = DistributedSampler(dataset, rank=rank, num_replicas=world_size, shuffle=True)
+    sampler = DistributedSampler(dataset, shuffle=False)
     return DataLoader(dataset, batch_size=batch_size, sampler=sampler)
 
 

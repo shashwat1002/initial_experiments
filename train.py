@@ -112,6 +112,8 @@ def train_model(rank, world_size):
         optimizers.append(torch.optim.Adam(layer.parameters(), lr=settings.LEARNING_RATE))
 
     train(bert_model_ddp, loss_funs, optimizers, train_dataset, test_dataset, rank, world_size)
+
+    dist.barrier()
     dist.destroy_process_group()
 
 def test_model(dataset, rank=0):

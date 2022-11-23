@@ -31,7 +31,6 @@ def cleanup():
 
 
 def train_epoch(model, loss_funs, optimizers, dataloader, rank, world_size):
-    model.train()
 
     epoch_loss = []
     for i in range(LAYER_NUM):
@@ -93,7 +92,7 @@ def train_model(rank, world_size):
 
     setup(rank, world_size) # for initialization of distributed stuff
     print(f"Rank: {rank}")
-    bert_model = ExperimentModel(CONFIGURATION, HIDDEN_SIZE).to(rank) # rank will have the specific GPU id
+    bert_model = ExperimentModel(CONFIGURATION).to(rank) # rank will have the specific GPU id
 
     bert_model_ddp = DDP(bert_model, device_ids=[rank])
 
@@ -124,7 +123,6 @@ def test_model(dataset, rank=0):
     predictions_all = []
     targets_all = []
     model = torch.load(settings.MODEL_PATH)
-    model.eval()
 
     for i in range(LAYER_NUM):
         predictions_all.append([])

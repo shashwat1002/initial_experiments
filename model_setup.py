@@ -11,10 +11,12 @@ INTERMEDIATE_2 = 2
 
 class ExperimentModel(nn.Module):
 
-    def __init__(self, bert_config, bert_dim):
+    def __init__(self, bert_config):
         super().__init__()
 
-        self.bert_layer = RobertaModel.from_pretrained('roberta-base', config=CONFIGURATION)
+        self.bert_layer = RobertaModel.from_pretrained('roberta-base', config=bert_config)
+        bert_dim = bert_config.hidden_size
+        self.bert_layer.eval()
 
         # freeze bert
         for param in self.bert_layer.parameters():

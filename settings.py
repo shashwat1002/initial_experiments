@@ -1,10 +1,8 @@
 from transformers import RobertaTokenizer, RobertaConfig
 
 
-HIDDEN_SIZE = 768
 TOKENIZER = RobertaTokenizer.from_pretrained('roberta-base')
 CONFIGURATION = RobertaConfig.from_pretrained('roberta-base', output_hidden_states=True)
-CONFIGURATION.hidden_size = HIDDEN_SIZE
 FREEZE_BERT = True
 NUM_EPOCHS = 200
 BATCH_SIZE = 100

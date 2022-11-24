@@ -75,17 +75,24 @@ def train(model, loss_fun, optimizers, train_dataset, test_dataset, rank, world_
     dataloader = make_dataloader(train_dataset, batch_size=settings.BATCH_SIZE)
     for epoch in range(settings.NUM_EPOCHS):
         dataloader.sampler.set_epoch(epoch)
-        print(f"Starting epoch number: {epoch+1}", flush=True)
+        print(f"Starting epoch number: {epoch+1}, rank: {rank}", flush=True)
+
+        if epoch != 0:
+            print(f"about to load model for epoch two, rank: {rank}")
+            map_location = {'cuda:%d' % 0: 'cuda:%d' % rank}
+            model.load_state_dict(torch.load(settings.MODEL_PATH, map_location=map_location))
+
         epoch_losses = train_epoch(model, loss_fun, optimizers, dataloader, rank, world_size)
         string_line = '\t'.join([str(i) for i in epoch_losses])
         print(string_line, flush=True)
         if rank == 0:
             # save stuff and test model only in the master process
-            torch.save(model.module, settings.MODEL_PATH)
+            torch.save(model.state_dict(), settings.MODEL_PATH)
             print(f"Train classification report: {epoch+1}", flush=True)
-            test_model(train_dataset, rank)
+            test_model(train_dataset, rank, model=model)
             print(f"Test classification report: {epoch+1}", flush=True)
-            test_model(test_dataset, rank)
+            test_model(test_dataset, rank, model=model)
+        print(f"rank at end: {rank}")
         dist.barrier() # for sync
 
 def train_model(rank, world_size):
@@ -115,14 +122,20 @@ def train_model(rank, world_size):
     dist.barrier()
     dist.destroy_process_group()
 
-def test_model(dataset, rank=0):
+def test_model(dataset, rank=0, model=None):
 
 
     # This function uses single GPU
     dataloader = DataLoader(dataset, batch_size=int(settings.BATCH_SIZE*0.5))
     predictions_all = []
     targets_all = []
-    model = torch.load(settings.MODEL_PATH)
+    print("testtt")
+    if model is None:
+        model = DDP(ExperimentModel(settings.CONFIGURATION).to(rank), device_ids=[rank])
+        map_location = {'cuda:%d' % 0: 'cuda:%d' % rank}
+        model.load_state_dict(torch.load(settings.MODEL_PATH, map_location=map_location))
+
+    model = model.module
 
     for i in range(LAYER_NUM):
         predictions_all.append([])
@@ -193,11 +206,12 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 
-WORLD_SIZE = torch.cuda.device_count()
-print(f"number of devices: {WORLD_SIZE}")
+
 
 if __name__ == "__main__":
 
+    WORLD_SIZE = torch.cuda.device_count()
+    print(f"number of devices: {WORLD_SIZE}")
     print("START", flush=True)
     get_options()
     print_global_vars()

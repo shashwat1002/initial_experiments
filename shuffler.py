@@ -26,15 +26,15 @@ def random_char_control(s1, s2, shuffle):
             ret += c
     return s1, ret
 
-import random
+# import random
 
-s = string.ascii_lowercase[:26]
-l = list(s)
-random.Random(SEED).shuffle(l)
-result = ''.join(l)
-print(result)
+# s = string.ascii_lowercase[:26]
+# l = list(s)
+# random.Random(SEED).shuffle(l)
+# result = ''.join(l)
+# print(result)
 
-s1 = "I do play"
-s2 = "I don't play"
-t1, t2 = random_char_control(s1, s2, result)
-print(t1, t2)
+# s1 = "I do play"
+# s2 = "I don't play"
+# t1, t2 = random_char_control(s1, s2, result)
+# print(t1, t2)

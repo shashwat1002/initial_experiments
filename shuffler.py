@@ -1,6 +1,8 @@
 import difflib
 import string
 
+SEED = 0
+
 def random_char_control(s1, s2, shuffle):
     '''
     Pass shuffle as a 26 length string where 
@@ -26,10 +28,9 @@ def random_char_control(s1, s2, shuffle):
 
 import random
 
-seed = 0
 s = string.ascii_lowercase[:26]
 l = list(s)
-random.Random(seed).shuffle(l)
+random.Random(SEED).shuffle(l)
 result = ''.join(l)
 print(result)
 

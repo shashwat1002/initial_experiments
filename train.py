@@ -1,5 +1,4 @@
 from model_setup import ExperimentModel
-from settings import *
 import settings
 from data import *
 from sklearn import metrics
@@ -32,6 +31,8 @@ def cleanup():
 
 def train_epoch(model, loss_funs, optimizers, dataloader, rank, world_size):
 
+    print(f"modelpath: {settings.MODEL_PATH}, epochs: {settings.NUM_EPOCHS}, learning_rate: {settings.LEARNING_RATE}", flush=True)
+    
     epoch_loss = []
     for i in range(LAYER_NUM):
         epoch_loss.append(0)
@@ -73,6 +74,7 @@ def train_epoch(model, loss_funs, optimizers, dataloader, rank, world_size):
 def train(model, loss_fun, optimizers, train_dataset, test_dataset, rank, world_size):
 
     dataloader = make_dataloader(train_dataset, batch_size=settings.BATCH_SIZE)
+    print(f"modelpath: {settings.MODEL_PATH}, epochs: {settings.NUM_EPOCHS}, learning_rate: {settings.LEARNING_RATE}", flush=True)
     for epoch in range(settings.NUM_EPOCHS):
         dataloader.sampler.set_epoch(epoch)
         print(f"Starting epoch number: {epoch+1}, rank: {rank}", flush=True)
@@ -99,6 +101,8 @@ def train_model(rank, world_size):
 
     setup(rank, world_size) # for initialization of distributed stuff
     print(f"Rank: {rank}")
+    get_options()
+    print(f"modelpath: {settings.MODEL_PATH}, epochs: {settings.NUM_EPOCHS}, learning_rate: {settings.LEARNING_RATE}", flush=True)
     bert_model = ExperimentModel(CONFIGURATION).to(rank) # rank will have the specific GPU id
 
     bert_model_ddp = DDP(bert_model, device_ids=[rank])
@@ -126,6 +130,8 @@ def test_model(dataset, rank=0, model=None):
 
 
     # This function uses single GPU
+    print(f"modelpath: {settings.MODEL_PATH}, epochs: {settings.NUM_EPOCHS}, learning_rate: {settings.LEARNING_RATE}", flush=True)
+    
     dataloader = DataLoader(dataset, batch_size=int(settings.BATCH_SIZE*0.5))
     predictions_all = []
     targets_all = []
@@ -174,7 +180,7 @@ def test_model(dataset, rank=0, model=None):
 
     for i in range(LAYER_NUM):
         print(f"Layer no. {i}", flush=True)
-        print(metrics.classification_report(targets_all, predictions_all[i]), flush=True)
+        print(metrics.classification_report(targets_all, predictions_all[i], digits=4), flush=True)
 
 
 # test_dataset = NegLamaDataet("LAMA_primed_negated/data/ConceptNet/high_ranked/ConceptNet.jsonl", BERT_INPUT_SIZE)
@@ -213,7 +219,6 @@ if __name__ == "__main__":
     WORLD_SIZE = torch.cuda.device_count()
     print(f"number of devices: {WORLD_SIZE}")
     print("START", flush=True)
-    get_options()
     print_global_vars()
 
     mp.spawn(

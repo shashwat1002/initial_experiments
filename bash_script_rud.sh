@@ -15,4 +15,4 @@ conda activate nlp_coursework
 
 
 
-python train.py --model_name=roberta_model --batch_size=1000 --learning_rate=1e-3 --num_epochs=200
+python train.py --model_name=roberta_model --batch_size=800 --learning_rate=1e-3 --num_epochs=200

@@ -5,6 +5,8 @@ from settings import *
 import torch
 from icecream import ic
 import shuffler
+import string
+import random
 
 
 def transform_lama_to_experiment_format(dictionary, control_task=False):

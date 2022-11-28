@@ -8,15 +8,17 @@ def random_char_control(s1, s2, shuffle):
     Pass shuffle as a 26 length string where 
     shuffle[i] = transformation for 'a' + i (in lowercase)
     '''
+
     ret = ""
     for i,s in enumerate(difflib.ndiff(s1, s2)):
         if s[0]==' ': 
-            ret += s2[i]
+            ret += s[-1]
         elif s[0]=='-':
-            raise ValueError(f'{s1}-> {s2} involves deletions and random_char_control cant handle that')
+            # raise ValueError(f'{s1}-> {s2} involves deletions and random_char_control cant handle that')
+            continue
         elif s[0]=='+':
             c = s[-1]
-            print(s[0], s[-1], i)
+            # print(s[0], s[-1], i)
             if c.isalpha():
                 if c.isupper(): #Assuming: we need to preserve upper-case letters
                     c = shuffle[string.ascii_uppercase.index(c)]

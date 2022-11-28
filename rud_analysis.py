@@ -35,7 +35,7 @@ def accuracy_analysis(file_path):
         ic(len(layer_train_accuracy_data[0]))
         return layer_train_accuracy_data, layer_test_accuracy_data
 
-train_rep, test_rep = accuracy_analysis("test_output_roberta_proper_1.txt")
+train_rep, test_rep = accuracy_analysis("roberta_reproducibility1.txt")
 # print(data)
 
 def plot_function(data, name):
@@ -59,9 +59,9 @@ def smooth_plot(data, name):
     pyplot.savefig(f'figures/{name}.png')
 
 pyplot.ylim([0.48, 0.75])
-plot_function(train_rep, "train_roberta_proper_1")
-plot_function(test_rep, "test_roberta_proper_1")
+plot_function(train_rep, "train_roberta_reproducibility")
+plot_function(test_rep, "test_roberta_reproducibility")
 
-smooth_plot(train_rep, "train_roberta_proper_sooth_1")
-smooth_plot(test_rep, "test_roberta_proper_sooth_1")
+smooth_plot(train_rep, "train_roberta_rep_sooth_1")
+smooth_plot(test_rep, "test_roberta_rep_sooth_1")
 

@@ -14,6 +14,7 @@ DEV_FILE_PATH = "lama_dev.txt"
 BERT_INPUT_SIZE = 128
 MODEL_PATH = "model2.pth"
 LEARNING_RATE = 1e-5
+NUM_LAYERS = 13
 
 sep_token = "</s>"
 cls_token = "<s>"

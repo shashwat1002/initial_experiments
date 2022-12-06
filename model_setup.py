@@ -9,7 +9,7 @@ from icecream import ic
 INTERMEDIATE_1 = 300
 INTERMEDIATE_2 = 2
 
-class ExperimentModel(nn.Module):
+class ExperimentModelDepercated(nn.Module):
 
     def __init__(self, bert_config):
         super().__init__()
@@ -77,6 +77,94 @@ class ExperimentModel(nn.Module):
         scores_across_layers = [module(sentence_rep_tensors[i]) for i, module in enumerate(self.classification_layers)]
         # ic(scores_across_layers)
         # ic(scores_across_layers[0].size())
+        return scores_across_layers
+
+
+
+class ClassificationProbes:
+    """
+    This class houses classification probes for all layers of centre model (bert or roberta)
+    The probes expect the _sequence representation_ for sequence classification
+    """
+
+    def __init__(self, rep_dim, num_layers, num_classes=2):
+        """
+        rep_dim: dimensions of the sentence representation
+        num_layers: number of layers, that is number of probes
+        """
+        super().__init__()
+        self.probes = nn.ModuleList(
+            [nn.Linear(rep_dim, num_classes) for i in range(num_layers)]
+        )
+
+    def forward(self, batch):
+        """
+        batch: [batch_size * rep_dim] * num_layers, it is a list of tensors each with dimensions batch_size * rep_dim
+        a batch of sentence representations
+        """
+
+        scores_across_layers = [module(sentence_rep_tensors[i]) for i, module in enumerate(self.probes)]
+
+        return scores_across_layers
+
+
+class ExperimentModel:
+    """
+    This class will have a frozen bert and all the probes
+    """
+
+    def __init__(self, bert_config):
+        super().__init__()
+        self.bert_layer = RobertaModel.from_pretrained('roberta-base', config=bert_config)
+        self.bert_layer.eval() # put it in eval mode so that dropout is not active
+
+        for param in self.bert_layer.parameters():
+            param.requires_grad = False
+
+        self.probe_model = ClassificationProbes(bert_config.hidden_size, NUM_LAYERS, num_classes=2)
+
+        self.pooling_method = self.mean_pooling
+
+    def mean_pooling(self, batch):
+        """
+        expects batch to be a list of length num_layers
+        each tensor is of dimensions batch_size x sentence_length x hidden_size
+
+        returns: a list of num_layer elements each tensor is batch_size x hidden_size
+
+        simply means everything in a sequence
+        """
+
+        return [torch.mean(batch[i], dim=1, keepdim=True).squeeze(dim=1) for i in range(NUM_LAYERS)]
+
+
+
+    def decide_pooling_method(self, index=0):
+        """
+        Method to select a method for pooling to sequence representation
+        default is mean
+        """
+
+        if index == 0:
+            self.pooling_method = self.mean_pooling
+
+
+    def forward(self, batch):
+        """
+        batch: batch_size * sequence_length
+        is the batch of sequences essentially
+        """
+
+        with torch.no_grad():
+           all_hidden_embeddings = self.bert_layer(batch)['hidden_states']
+
+        # all_hidden_embeddings is a list of NUM_LAYERS elements
+        # each tensor in it is batchsize * sequence_length * hidden_size
+
+        sentence_rep_tensors = self.pooling_method(batch)
+
+        scores_across_layers = self.probe_model(sentence_rep_tensors)
+
         return scores_across_layers
 
 

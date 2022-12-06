@@ -11,7 +11,7 @@ module load cuda/10.0
 module load cudnn/7.6-cuda-10.0
 
 eval "$(conda shell.bash hook)"
-conda activate nlp_coursework
+conda activate new_research_env
 
 
 

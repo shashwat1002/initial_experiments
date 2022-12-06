@@ -141,7 +141,12 @@ def test_model(dataset, rank=0, model=None):
         map_location = {'cuda:%d' % 0: 'cuda:%d' % rank}
         model.load_state_dict(torch.load(settings.MODEL_PATH, map_location=map_location))
 
-    model = model.module
+    try:
+        model_tmp = model.module
+        model = model_tmp
+    except AttributeError:
+        pass
+
 
     for i in range(LAYER_NUM):
         predictions_all.append([])

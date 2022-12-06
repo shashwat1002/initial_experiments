@@ -4,9 +4,12 @@ from transformers import BertTokenizer
 from settings import *
 import torch
 from icecream import ic
+import shuffler
+import string
+import random
 
 
-def transform_lama_to_experiment_format(dictionary):
+def transform_lama_to_experiment_format(dictionary, control_task=False):
     sentence1 = dictionary["masked_sentences"]
     sentence2 = dictionary["masked_negations"]
     mask_replace = dictionary["obj_label"]
@@ -15,6 +18,15 @@ def transform_lama_to_experiment_format(dictionary):
     sentence2 = sentence2[0].replace("[MASK]", mask_replace)
 
     sentences = [sentence1, sentence2]
+
+    if control_task:
+        # replace negation particles with random gibberish
+        s = string.ascii_lowercase[:26]
+        l = list(s)
+        random.Random(shuffler.SEED).shuffle(l)
+        cipher = ''.join(l)
+        sentences = list(shuffler.random_char_control(sentence1, sentence2, cipher))
+
 
     combinations = []
 
@@ -33,7 +45,14 @@ def transform_lama_to_experiment_format(dictionary):
     return combinations
 
 class NegLamaDataet(Dataset):
-    def __init__(self, file_path, inputsize):
+    def __init__(self, file_path, inputsize, control_task=False):
+
+        """
+        Parameters:
+            file_path: path of the file we'll be creating our dataset from
+            inputsize: sequence length
+            control_task: is the dataset being created for general learning or the control task. The control replaced negation particles with random stuff
+        """
 
         self.inputsize = inputsize
         self.parsed_dictionaries = []
@@ -48,7 +67,7 @@ class NegLamaDataet(Dataset):
 
 
         self.transformed_inputs_text = [
-            entry for dictionary in self.parsed_dictionaries for entry in transform_lama_to_experiment_format(dictionary)
+            entry for dictionary in self.parsed_dictionaries for entry in transform_lama_to_experiment_format(dictionary, control_task)
         ]
 
 

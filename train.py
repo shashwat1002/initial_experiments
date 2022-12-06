@@ -118,7 +118,7 @@ def train_model(rank, world_size):
 
     optimizers = []
     # TODO: REQUIRES FURTHER LOOK FOR CORRECTNESS
-    for layer in bert_model_ddp.module.classification_layers:
+    for layer in bert_model_ddp.module.probe_model.probes:
         optimizers.append(torch.optim.Adam(layer.parameters(), lr=settings.LEARNING_RATE))
 
     train(bert_model_ddp, loss_funs, optimizers, train_dataset, test_dataset, rank, world_size)

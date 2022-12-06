@@ -103,7 +103,7 @@ class ClassificationProbes(nn.Module):
         a batch of sentence representations
         """
 
-        scores_across_layers = [module(sentence_rep_tensors[i]) for i, module in enumerate(self.probes)]
+        scores_across_layers = [module(batch[i]) for i, module in enumerate(self.probes)]
 
         return scores_across_layers
 
@@ -161,7 +161,7 @@ class ExperimentModel(nn.Module):
         # all_hidden_embeddings is a list of NUM_LAYERS elements
         # each tensor in it is batchsize * sequence_length * hidden_size
 
-        sentence_rep_tensors = self.pooling_method(batch)
+        sentence_rep_tensors = self.pooling_method(all_hidden_embeddings)
 
         scores_across_layers = self.probe_model(sentence_rep_tensors)
 

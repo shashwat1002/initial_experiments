@@ -81,7 +81,7 @@ class ExperimentModelDepercated(nn.Module):
 
 
 
-class ClassificationProbes:
+class ClassificationProbes(nn.Module):
     """
     This class houses classification probes for all layers of centre model (bert or roberta)
     The probes expect the _sequence representation_ for sequence classification
@@ -108,7 +108,7 @@ class ClassificationProbes:
         return scores_across_layers
 
 
-class ExperimentModel:
+class ExperimentModel(nn.Module):
     """
     This class will have a frozen bert and all the probes
     """

@@ -7,6 +7,7 @@ from icecream import ic
 import shuffler
 import string
 import random
+import pickle
 
 
 def transform_lama_to_experiment_format(dictionary, control_task=False):
@@ -104,6 +105,51 @@ def make_dataloader(dataset, batch_size):
     # so that there are no redundant datapoints across processes
     sampler = DistributedSampler(dataset, shuffle=False)
     return DataLoader(dataset, batch_size=batch_size, sampler=sampler)
+
+
+class SequenceRepDataset(Dataset):
+    """
+    Dataset that has the sequences after being passed through RoBERTa
+    Targets are kept as is
+    """
+
+    def __init__(self, file_path, dataset_orig=None):
+        """
+        dataset_orig: not None implies we'll have to create the representation dataset from it
+        file_path: file_path will be used to save or load stuff to.
+        """
+
+        self.list_of_per_layer_representations_and_target = []
+
+        if dataset_orig is not None:
+
+            bert_model = RobertaModel.from_pretrained('roberta-base', config=CONFIGURATION)
+            bert_model.eval()
+
+
+            for item, target in dataset_orig.tensor_and_target:
+
+                with torch.no_grad():
+                    all_hidden_embeddings = self.bert_model(item)['hidden_states']
+
+                self.list_of_per_layer_representations_and_target.append((all_hidden_embedings, target))
+
+            with open(file_path, "wb") as file:
+                pickle.dump(self.list_of_per_layer_representations_and_target, file)
+        else:
+            with open(file_path, "rb") as file:
+                self.list_of_per_layer_representations_and_target = pickle.load(file)
+
+
+    def __len__(self):
+        return len(self.list_of_per_layer_representations_and_target)
+
+    def __getitem__(self, index):
+        return self.list_of_per_layer_representations_and_target[index]
+
+
+dataset = NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE)
+rep_dataset = SequenceRepDataset("train_reps.txt", dataset)
 
 
 

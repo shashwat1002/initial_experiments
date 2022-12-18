@@ -11,6 +11,19 @@ DEVICE = "cuda"
 TRAIN_FILE_PATH = "lama_train.txt"
 TEST_FILE_PATH = "lama_test.txt"
 DEV_FILE_PATH = "lama_dev.txt"
+
+
+TRAIN_SENTENCE_REP_SCRATCH_PATH = "/scratch/sentence_rep_train"
+TEST_SENTENCE_REP_SCRATCH_PATH = "/scratch/sentence_rep_test"
+VALIDATION_SENTENCE_REP_SCRATCH_PATH = "/scratch/sentence_rep_validation"
+
+TRAIN_SENTENCE_REP_SHARE_PATH = "/share1/shashwat.s/sentence_rep_train"
+TEST_SENTENCE_REP_SHARE_PATH = "/share1/shashwat.s/sentence_rep_test"
+VALIDATION_SENTENCE_REP_SHARE_PATH = "/share1/shashwat.s/sentence_rep_validation"
+
+DATAPOINTS_PER_REP_FILE = 1000
+
+
 BERT_INPUT_SIZE = 128
 MODEL_PATH = "model2.pth"
 LEARNING_RATE = 1e-5

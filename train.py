@@ -1,4 +1,4 @@
-from model_setup import ExperimentModel
+from model_setup import ExperimentModel, ClassificationProbes
 import settings
 from data import *
 from sklearn import metrics
@@ -40,7 +40,14 @@ def train_epoch(model, loss_funs, optimizers, dataloader, rank, world_size):
     count = 0
 
     for batch in dataloader:
-        batch = [batch[0].to(rank), batch[1].to(rank)]
+        if type(dataloader.dataset) == NegLamaDataet:
+            # this is the case when we're not using cached embeddings
+            batch = [batch[0].to(rank), batch[1].to(rank)]
+        elif type(dataloader.dataset) == SequenceRepDataset:
+            # when using cached embeddings
+            # is of the form (input, target) where input is [(batch_size x hidden_size)] * num_layers
+            print("Cached embeddings will be used", flush=True)
+            batch = [[embeddings_tensor.to(rank) for embeddings_tensor in batch[0]], batch[1].to(rank)]
         predictions = model(batch[0])
         predictions_tensor = torch.stack(predictions, dim=1).to(rank)
         ic(predictions_tensor.device)
@@ -102,7 +109,7 @@ def train_model(rank, world_size):
     setup(rank, world_size) # for initialization of distributed stuff
     print(f"Rank: {rank}")
     get_options()
-    print(f"modelpath: {settings.MODEL_PATH}, epochs: {settings.NUM_EPOCHS}, learning_rate: {settings.LEARNING_RATE}", flush=True)
+    print(f"modelpath: {settings.MODEL_PATH}, epochs: {settings.NUM_EPOCHS}, learning_rate: {settings.LEARNING_RATE}, batch_size: {settings.BATCH_SIZE}", flush=True)
     bert_model = ExperimentModel(CONFIGURATION).to(rank) # rank will have the specific GPU id
 
     bert_model_ddp = DDP(bert_model, device_ids=[rank])
@@ -118,13 +125,54 @@ def train_model(rank, world_size):
 
     optimizers = []
     # TODO: REQUIRES FURTHER LOOK FOR CORRECTNESS
-    for layer in bert_model_ddp.module.classification_layers:
+    for layer in bert_model_ddp.module.probe_model.probes:
         optimizers.append(torch.optim.Adam(layer.parameters(), lr=settings.LEARNING_RATE))
 
     train(bert_model_ddp, loss_funs, optimizers, train_dataset, test_dataset, rank, world_size)
 
     dist.barrier()
     dist.destroy_process_group()
+
+def train_model_probes(rank, world_size):
+
+    setup(rank, world_size) # for initialization of distributed stuff
+    print(f"Rank: {rank}")
+    get_options()
+    print(f"modelpath: {settings.MODEL_PATH}, epochs: {settings.NUM_EPOCHS}, learning_rate: {settings.LEARNING_RATE}, batch_size: {settings.BATCH_SIZE}", flush=True)
+
+    probe_model = ClassificationProbes(CONFIGURATION.hidden_size, NUM_LAYERS).to(rank)
+
+    probe_model_ddp = DDP(probe_model, device_ids=[rank])
+
+    if rank == 0:
+        train_dataset = NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE)
+        test_dataset = NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE)
+        train_dataset_rep = SequenceRepDataset(TRAIN_SENTENCE_REP_SCRATCH_PATH, train_dataset)
+        test_dataset_rep = SequenceRepDataset(TEST_SENTENCE_REP_SCRATCH_PATH, test_dataset)
+        del train_dataset_rep # the purpose of this branch was only to create files
+        del test_dataset_rep # therefore deleting is fine (and important for memory)
+    dist.barrier()
+
+    # load stuff from memory
+    train_dataset_rep = SequenceRepDataset(TRAIN_SENTENCE_REP_SCRATCH_PATH)
+    test_dataset_rep = SequenceRepDataset(TEST_SENTENCE_REP_SCRATCH_PATH)
+
+
+    loss_funs = []
+    for i in range(LAYER_NUM):
+        loss_fun = nn.CrossEntropyLoss()
+        loss_funs.append(loss_fun)
+
+    optimizers = []
+    # TODO: REQUIRES FURTHER LOOK FOR CORRECTNESS
+    for layer in probe_model_ddp.module.probes:
+        optimizers.append(torch.optim.Adam(layer.parameters(), lr=settings.LEARNING_RATE))
+
+    train(probe_model_ddp, loss_funs, optimizers, train_dataset_rep, test_dataset_rep, rank, world_size)
+
+    dist.barrier()
+    dist.destroy_process_group()
+
 
 def test_model(dataset, rank=0, model=None):
 
@@ -153,7 +201,14 @@ def test_model(dataset, rank=0, model=None):
     with torch.no_grad():
         for batch in dataloader:
 
-            batch = [batch[0].to(rank), batch[1].to(rank)]
+            if type(dataloader.dataset) == NegLamaDataet:
+                # this is the case when we're not using cached embeddings
+                batch = [batch[0].to(rank), batch[1].to(rank)]
+            elif type(dataloader.dataset) == SequenceRepDataset:
+                # when using cached embeddings
+                # is of the form (input, target) where input is [(batch_size x hidden_size)] * num_layers
+                print("Cached embeddings will be used", flush=True)
+                batch = [[embeddings_tensor.to(rank) for embeddings_tensor in batch[0]], batch[1].to(rank)]
 
             batch[1] = batch[1].detach()
             batch[0] = batch[0].detach()
@@ -227,6 +282,6 @@ if __name__ == "__main__":
     print_global_vars()
 
     mp.spawn(
-        train_model, args=(WORLD_SIZE,), nprocs=WORLD_SIZE
+        train_model_probes, args=(WORLD_SIZE,), nprocs=WORLD_SIZE
     )
 

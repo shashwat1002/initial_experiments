@@ -15,6 +15,8 @@ BERT_INPUT_SIZE = 128
 MODEL_PATH = "model2.pth"
 LEARNING_RATE = 1e-5
 
+CONTROL_TASK_EXPT_1 = 0
+
 sep_token = "</s>"
 cls_token = "<s>"
 pad_token = "<pad>"
@@ -25,6 +27,7 @@ OPTIONS = [
     'batch_size=',
     'learning_rate=',
     'num_epochs=',
+    'control_task_index='
 ]
 
 def print_global_vars():

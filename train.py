@@ -114,12 +114,12 @@ def train_model(rank, world_size):
     for i in range(LAYER_NUM):
         loss_fun = nn.CrossEntropyLoss()
         loss_funs.append(loss_fun)
-    # optimizer = torch.optim.Adam(bert_model.parameters(), lr=1e-2)
+    # optimizer = torch.optim.AdamW(bert_model.parameters(), lr=1e-2)
 
     optimizers = []
     # TODO: REQUIRES FURTHER LOOK FOR CORRECTNESS
     for layer in bert_model_ddp.module.classification_layers:
-        optimizers.append(torch.optim.Adam(layer.parameters(), lr=settings.LEARNING_RATE))
+        optimizers.append(torch.optim.AdamW(layer.parameters(), lr=settings.LEARNING_RATE))
 
     train(bert_model_ddp, loss_funs, optimizers, train_dataset, test_dataset, rank, world_size)
 

@@ -31,7 +31,7 @@ def cleanup():
 
 def train_epoch(model, loss_funs, optimizers, dataloader, rank, world_size):
 
-    print(f"modelpath: {settings.MODEL_PATH}, epochs: {settings.NUM_EPOCHS}, learning_rate: {settings.LEARNING_RATE}", flush=True)
+    print(f"modelpath: {settings.MODEL_PATH}, epochs: {settings.NUM_EPOCHS}, learning_rate: {settings.LEARNING_RATE}, control_task: {settings.CONTROL_TASK_EXPT_1}", flush=True)
     
     epoch_loss = []
     for i in range(LAYER_NUM):
@@ -107,8 +107,8 @@ def train_model(rank, world_size):
 
     bert_model_ddp = DDP(bert_model, device_ids=[rank])
 
-    train_dataset = NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE)
-    test_dataset = NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE)
+    train_dataset = NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE, settings.CONTROL_TASK_EXPT_1)
+    test_dataset = NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE, settings.CONTROL_TASK_EXPT_1)
 
     loss_funs = []
     for i in range(LAYER_NUM):
@@ -207,6 +207,8 @@ def get_options():
             settings.LEARNING_RATE = float(option_val)
         elif option_name == '--num_epochs':
             settings.NUM_EPOCHS = int(option_val)
+        elif option_name == '--control_task_index':
+            settings.CONTROL_TASK_EXPT_1 = int(option_val)
 
 
 

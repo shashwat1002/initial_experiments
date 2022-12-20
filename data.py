@@ -9,7 +9,29 @@ import string
 import random
 
 
-def transform_lama_to_experiment_format(dictionary, control_task=False):
+def transform_lama_to_experiment_format(dictionary, control_task=0):
+
+    """
+    control_task: takes one of three integers
+        - 0: no control task, OG experiment
+        - 1: control task of replacing negation particles with gibberish and running trained probes
+        - 2: Hewitt based control task (elaborated later)
+
+    The Experiment one generated mappings like so:
+        - AA -> 0
+        - AA' -> 1
+        - A'A -> 1
+        - A'A' -> 0
+
+    This function transforms it like so when control_task=2:
+        - AA -> 0
+        - AA' -> 0
+        - A'A -> 1
+        - A'A' -> 1
+
+    The purpose is a control task
+    """
+
     sentence1 = dictionary["masked_sentences"]
     sentence2 = dictionary["masked_negations"]
     mask_replace = dictionary["obj_label"]
@@ -19,7 +41,7 @@ def transform_lama_to_experiment_format(dictionary, control_task=False):
 
     sentences = [sentence1, sentence2]
 
-    if control_task:
+    if control_task == 1:
         # replace negation particles with random gibberish
         s = string.ascii_lowercase[:26]
         l = list(s)
@@ -35,23 +57,34 @@ def transform_lama_to_experiment_format(dictionary, control_task=False):
             sentence = f"{cls_token} " + sentences[i] + f" {sep_token} " + sentences[j] + f" {sep_token}"
             outcome = -1
 
-            if i == j:
-                outcome = 0
-            else:
-                outcome = 1
+            if control_task == 0:
+                if i == j:
+                    outcome = 0
+                else:
+                    outcome = 1
+            elif control_task == 2:
+                if i == 0:
+                    outcome = 0
+                else:
+                    outcome = 1
 
             combinations.append((sentence, outcome))
 
     return combinations
 
+
+
 class NegLamaDataet(Dataset):
-    def __init__(self, file_path, inputsize, control_task=False):
+    def __init__(self, file_path, inputsize, control_task=0):
 
         """
         Parameters:
             file_path: path of the file we'll be creating our dataset from
             inputsize: sequence length
-            control_task: is the dataset being created for general learning or the control task. The control replaced negation particles with random stuff
+            control_task: integer that takes one of 3 values
+                - 0: no control task
+                - 1: original control task of running ingerence on dataset with negation particles replaced with gibberish
+                - 2: control task based on Hewitt et. al. with the mapping of pairs changed.
         """
 
         self.inputsize = inputsize

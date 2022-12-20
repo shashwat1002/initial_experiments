@@ -28,8 +28,8 @@ def run_gib_control_task(model_path, rank, world_size):
     train.test_model(dataset1, model=model)
     train.test_model(dataset2, model=model)
 
-    dataset1 = data.NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE, control_task=True)
-    dataset2 = data.NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE, control_task=True)
+    dataset1 = data.NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE, control_task=1)
+    dataset2 = data.NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE, control_task=1)
 
     print("Control run")
     train.test_model(dataset1, model=model)

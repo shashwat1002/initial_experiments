@@ -15,4 +15,4 @@ conda activate new_research_env
 
 
 
-python train.py --model_name=roberta_model --batch_size=800 --learning_rate=1e-3 --num_epochs=200 --control_task_index=0
+python train.py --model_name=roberta_model --batch_size=800 --learning_rate=1e-3 --num_epochs=200 --control_task_index=0 --deep=False

@@ -14,6 +14,7 @@ DEV_FILE_PATH = "lama_dev.txt"
 BERT_INPUT_SIZE = 128
 MODEL_PATH = "model2.pth"
 LEARNING_RATE = 1e-5
+DEEP = False
 
 CONTROL_TASK_EXPT_1 = 0
 
@@ -27,7 +28,8 @@ OPTIONS = [
     'batch_size=',
     'learning_rate=',
     'num_epochs=',
-    'control_task_index='
+    'control_task_index=',
+    'deep='
 ]
 
 def print_global_vars():

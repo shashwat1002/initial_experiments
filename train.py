@@ -1,4 +1,4 @@
-from model_setup import ExperimentModel
+from model_setup import ExperimentModel, ExperimentModelDeep
 import settings
 from data import *
 from sklearn import metrics
@@ -29,7 +29,7 @@ def cleanup():
     dist.destroy_process_group()
 
 
-def train_epoch(model, loss_funs, optimizers, dataloader, rank, world_size):
+def train_epoch(model, loss_fun, optimizers, dataloader, rank, world_size):
 
     print(f"modelpath: {settings.MODEL_PATH}, epochs: {settings.NUM_EPOCHS}, learning_rate: {settings.LEARNING_RATE}, control_task: {settings.CONTROL_TASK_EXPT_1}", flush=True)
     
@@ -41,6 +41,10 @@ def train_epoch(model, loss_funs, optimizers, dataloader, rank, world_size):
 
     for batch in dataloader:
         batch = [batch[0].to(rank), batch[1].to(rank)]
+
+        for i in range(LAYER_NUM):
+            optimizers[i].zero_grad()
+
         predictions = model(batch[0])
         predictions_tensor = torch.stack(predictions, dim=1).to(rank)
         ic(predictions_tensor.device)
@@ -51,17 +55,28 @@ def train_epoch(model, loss_funs, optimizers, dataloader, rank, world_size):
         ic(targets.size())
         # number of bert layers
 
-        loss_list = [loss_funs[i](predictions_tensor[:, i, :], targets[:, i].to(rank)) for i in range(LAYER_NUM)]
-        ic(loss_list)
+        # loss_list = [loss_funs[i](predictions_tensor[:, i, :], targets[:, i].to(rank)) for i in range(LAYER_NUM)]
+        # ic(loss_list)
 
         # QUESTIONABLE STEP
         tot_loss = 0
-        for i, loss in enumerate(loss_list):
-            # tot_loss += loss
-            optimizers[i].zero_grad()
-            loss.backward(retain_graph=True)
+        # for i, loss in enumerate(loss_list):
+        #     # tot_loss += loss
+        #     optimizers[i].zero_grad()
+        #     loss.backward(retain_graph=True)
+        #     optimizers[i].step()
+        #     epoch_loss[i] += loss.item()
+
+        for i in range(LAYER_NUM):
+            layer_loss = loss_fun(predictions_tensor[:, i, :], targets[:, i])
+            # optimizers[i].zero_grad()
+            layer_loss.backward(inputs=list(model.module.classification_layers[i].parameters()), retain_graph=True)
+            # layer_loss.backward(retain_graph=True)
+            print(f"Layer no. :{i}")
+            print(model.module.classification_layers[i].weight.grad)
             optimizers[i].step()
-            epoch_loss[i] += loss.item()
+            epoch_loss[i] += layer_loss.item()
+
         count += 1
 
     for i in range(LAYER_NUM):
@@ -97,23 +112,31 @@ def train(model, loss_fun, optimizers, train_dataset, test_dataset, rank, world_
         print(f"rank at end: {rank}")
         dist.barrier() # for sync
 
-def train_model(rank, world_size):
+def train_model(rank, world_size, deep=False):
 
     setup(rank, world_size) # for initialization of distributed stuff
     print(f"Rank: {rank}")
     get_options()
     print(f"modelpath: {settings.MODEL_PATH}, epochs: {settings.NUM_EPOCHS}, learning_rate: {settings.LEARNING_RATE}", flush=True)
-    bert_model = ExperimentModel(CONFIGURATION).to(rank) # rank will have the specific GPU id
 
+    bert_model = None
+
+    if not deep:
+        print("Not deep classifier")
+        bert_model = ExperimentModel(CONFIGURATION).to(rank) # rank will have the specific GPU id
+    else:
+        print("Using deep classifier", flush=True)
+        bert_model = ExperimentModelDeep(CONFIGURATION).to(rank)
     bert_model_ddp = DDP(bert_model, device_ids=[rank])
 
     train_dataset = NegLamaDataet(TRAIN_FILE_PATH, BERT_INPUT_SIZE, settings.CONTROL_TASK_EXPT_1)
     test_dataset = NegLamaDataet(TEST_FILE_PATH, BERT_INPUT_SIZE, settings.CONTROL_TASK_EXPT_1)
 
-    loss_funs = []
-    for i in range(LAYER_NUM):
-        loss_fun = nn.CrossEntropyLoss()
-        loss_funs.append(loss_fun)
+    # loss_funs = []
+    # for i in range(LAYER_NUM):
+    #     loss_fun = nn.CrossEntropyLoss()
+    #     loss_funs.append(loss_fun)
+    loss_fun = nn.CrossEntropyLoss()
     # optimizer = torch.optim.AdamW(bert_model.parameters(), lr=1e-2)
 
     optimizers = []
@@ -121,7 +144,7 @@ def train_model(rank, world_size):
     for layer in bert_model_ddp.module.classification_layers:
         optimizers.append(torch.optim.AdamW(layer.parameters(), lr=settings.LEARNING_RATE))
 
-    train(bert_model_ddp, loss_funs, optimizers, train_dataset, test_dataset, rank, world_size)
+    train(bert_model_ddp, loss_fun, optimizers, train_dataset, test_dataset, rank, world_size)
 
     dist.barrier()
     dist.destroy_process_group()
@@ -209,6 +232,8 @@ def get_options():
             settings.NUM_EPOCHS = int(option_val)
         elif option_name == '--control_task_index':
             settings.CONTROL_TASK_EXPT_1 = int(option_val)
+        elif option_name == '--deep':
+            settings.DEEP = bool(option_val)
 
 
 

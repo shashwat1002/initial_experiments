@@ -153,7 +153,7 @@ def main():
     model = RobertaForMaskedLM.from_pretrained(
         'roberta-base', config=CONFIGURATION).to(DEVICE)
 
-    dataset = NegLAMADatasetMaskedLM(TEST_FILE_PATH)
+    dataset = NegLAMADatasetMaskedLM(TRAIN_FILE_PATH)
 
     dataloader = DataLoader(dataset, batch_size=1)
     # iter_dataloader = iter(dataloader)

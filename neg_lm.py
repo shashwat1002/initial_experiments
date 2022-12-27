@@ -6,6 +6,7 @@ from icecream import ic
 import json
 from tabulate import tabulate
 from torch.nn import Softmax
+from torch.distributions import Categorical
 
 
 """
@@ -36,7 +37,9 @@ class NegLAMADatasetMaskedLM(Dataset):
                     pass
 
         self.entries = [
-            (dictionary["masked_sentences"][0].replace("[MASK]", "<mask>"), dictionary["masked_negations"][0].replace("[MASK]", "<mask>"), dictionary["obj_label"]) for dictionary in self.parsed_dictionaries
+            (dictionary["masked_sentences"][0].replace("[MASK]", "<mask>").replace(" .", "."),
+            dictionary["masked_negations"][0].replace("[MASK]", "<mask>").replace(" .", "."),
+            dictionary["obj_label"]) for dictionary in self.parsed_dictionaries
         ]
 
         # self.list_of_dictionaries = []
@@ -84,7 +87,7 @@ def send_mask_logits(model, sentence):
 
 def top_k(k, logits_tensor):
     sorted_logits, indices = torch.sort(logits_tensor, descending=True)
-    return sorted_logits[:, :, :k], indices[:, :, :k]
+    return sorted_logits[:k], indices[:k]
 
 
 def test_model(model, dataset):
@@ -123,25 +126,33 @@ def deal_with_pair(model, input1):
     masked_logits1 = send_mask_logits(model, input1[0])
     masked_logits2 = send_mask_logits(model, input1[1])
 
-    preds1, indices1 = top_k(k, masked_logits1)
-    preds2, indices2 = top_k(k, masked_logits2)
+
 
     softmax_func = Softmax()
-    preds1_prob = softmax_func(preds1.squeeze())
-    preds2_prob = softmax_func(preds2.squeeze())
+    preds1_prob = softmax_func(masked_logits1.squeeze())
+    preds2_prob = softmax_func(masked_logits2.squeeze())
+    preds1, indices1 = top_k(k, preds1_prob)
+    preds2, indices2 = top_k(k, preds2_prob)
 
+    categorical_preds1 = Categorical(preds1_prob)
+    categorical_preds2 = Categorical(preds2_prob)
+
+    entropy1 = categorical_preds1.entropy()
+    entropy2 = categorical_preds2.entropy()
+
+    # preds1_cat = Categorical(preds1_prob)
 
     change = not (indices1.squeeze()[0] == indices2.squeeze()[0])
 
     pred_tokens1 = TOKENIZER.convert_ids_to_tokens(indices1.squeeze())
     pred_tokens2 = TOKENIZER.convert_ids_to_tokens(indices2.squeeze())
 
-    out_string = f"{input1[0]}\n{input1[1]}\n{str(change)}\n{input1[2]}\n"
+    out_string = f"{input1[0]}\n{input1[1]}\n{str(change)}\n {entropy1}, {entropy2}\n{input1[2]}\n"
 
     data = []
 
     for i in range(k):
-        data.append([pred_tokens1[i], preds1_prob.squeeze()[i], pred_tokens2[i], preds2_prob.squeeze()[i]])
+        data.append([pred_tokens1[i], preds1.squeeze()[i], pred_tokens2[i], preds2.squeeze()[i]])
 
     out_string += tabulate(data)
 
